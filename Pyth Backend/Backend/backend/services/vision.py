@@ -14,27 +14,14 @@ from config import (
 # Universal TFLite importer
 # Render/Linux may use tflite_runtime.
 # If unavailable, TensorFlow CPU can still provide tensorflow.lite.Interpreter.
+
 try:
-    import tflite_runtime.interpreter as tflite
+    import tensorflow.lite as tflite
     TFLITE_AVAILABLE = True
-    print("[VisionService] Loaded production tflite_runtime successfully.")
+    print("[VisionService] Loaded tensorflow.lite successfully.")
 except Exception as e:
-    print(f"[VisionService] tflite_runtime unavailable: {e}")
-    try:
-        import tensorflow.lite as tflite
-        TFLITE_AVAILABLE = True
-        print("[VisionService] Loaded tensorflow.lite successfully.")
-    except Exception as e:
-        print(f"[VisionService] tensorflow.lite unavailable: {e}")
-        try:
-            import ai_edge_litert.interpreter as tflite
-            TFLITE_AVAILABLE = True
-            print("[VisionService] Loaded ai_edge_litert successfully.")
-        except Exception as e:
-            print(f"[VisionService] ai_edge_litert unavailable: {e}")
-            TFLITE_AVAILABLE = False
-
-
+    print(f"[VisionService] tensorflow.lite unavailable: {e}")
+    TFLITE_AVAILABLE = False
 GENERIC_CATEGORIES = [
     "rice dish",
     "spiced rice",
