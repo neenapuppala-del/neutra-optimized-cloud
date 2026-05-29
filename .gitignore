@@ -1,0 +1,23 @@
+.env
+*.pyc
+__pycache__/
+uploads/
+backend/uploads/
+Pyth Backend/Backend/uploads/
+Pyth Backend/Backend/backend/uploads/
+
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+android/.gradle/
+ios/Flutter/ephemeral/
+macos/Flutter/ephemeral/
+windows/flutter/ephemeral/
+
+node_modules/
+.idea/
+.vscode/
+*.log
+.DS_Store

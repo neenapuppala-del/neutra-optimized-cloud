@@ -1,0 +1,35 @@
+name: neutra
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  http: ^0.13.6
+  image_picker: ^1.2.1
+  intl: ^0.20.2
+  provider: ^6.0.5
+  shared_preferences: ^2.2.3
+  
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo.jpg
+  fonts:
+    - family: Cormorant
+      fonts:
+        - asset: assets/fonts/Cormorant-Regular.ttf
+        - asset: assets/fonts/Cormorant-Bold.ttf
+          weight: 700

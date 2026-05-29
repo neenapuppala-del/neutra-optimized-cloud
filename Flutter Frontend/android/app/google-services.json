@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "924498407159",
+    "project_id": "neutra-8114c",
+    "storage_bucket": "neutra-8114c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:924498407159:android:642a01f1e0cabc27d16df2",
+        "android_client_info": {
+          "package_name": "com.example.neutra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBk-yCZonPbHHdy7JxDfHHELPh-ItlUnVY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
