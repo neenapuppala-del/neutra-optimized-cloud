@@ -3,17 +3,27 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static String get baseUrl {
+  
+  static String get aiBaseUrl {
     return "https://neutra-optimized-cloud.onrender.com";
   }
 
+  static String get nodeBaseUrl {
+    return "https://neutra-node-backend.onrender.com/api";
+  }
+
+  static String get baseUrl {
+  return nodeBaseUrl;
+  }
+
   static Future<Map<String, dynamic>?> detectFood(
-      List<List<int>> multipleImageBytes,
-      List<String> filenames) async {
+    List<List<int>> multipleImageBytes,
+    List<String> filenames,
+  ) async {
     try {
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('$baseUrl/api/phase1/detect'),
+        Uri.parse('$aiBaseUrl/api/phase1/detect'),
       );
 
       for (int i = 0; i < multipleImageBytes.length; i++) {
@@ -43,10 +53,10 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>?> calculateNutrition(
-      Map<String, dynamic> payload) async {
+    Map<String, dynamic> payload,
+  ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final userId = prefs.getString('userId');
 
       if (userId != null) {
@@ -54,7 +64,7 @@ class ApiService {
       }
 
       var response = await http.post(
-        Uri.parse('$baseUrl/api/phase2/nutrition'),
+        Uri.parse('$aiBaseUrl/api/phase2/nutrition'),
         headers: {
           "Content-Type": "application/json",
         },
@@ -81,13 +91,12 @@ class ApiService {
   ) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final userId = prefs.getString('userId');
 
       if (userId == null) return false;
 
       var response = await http.post(
-        Uri.parse('$baseUrl/analytics/log'),
+        Uri.parse('$nodeBaseUrl/analytics/log'),
         headers: {
           "Content-Type": "application/json",
         },
@@ -109,7 +118,6 @@ class ApiService {
   static Future<Map<String, dynamic>?> getDailyStats() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final userId = prefs.getString('userId');
 
       if (userId == null) return null;
@@ -118,7 +126,7 @@ class ApiService {
 
       var response = await http.get(
         Uri.parse(
-          '$baseUrl/analytics/daily?userId=$userId&timezoneOffset=$offset',
+          '$nodeBaseUrl/analytics/daily?userId=$userId&timezoneOffset=$offset',
         ),
       );
 
@@ -136,7 +144,6 @@ class ApiService {
   static Future<Map<String, dynamic>?> getWeeklyAnalytics() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final userId = prefs.getString('userId');
 
       if (userId == null) return null;
@@ -145,7 +152,7 @@ class ApiService {
 
       var response = await http.get(
         Uri.parse(
-          '$baseUrl/analytics/weekly?userId=$userId&timezoneOffset=$offset',
+          '$nodeBaseUrl/analytics/weekly?userId=$userId&timezoneOffset=$offset',
         ),
       );
 
@@ -163,7 +170,6 @@ class ApiService {
   static Future<Map<String, dynamic>?> getDailyReview() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final userId = prefs.getString('userId');
 
       if (userId == null) return null;
@@ -172,7 +178,7 @@ class ApiService {
 
       var response = await http.get(
         Uri.parse(
-          '$baseUrl/analytics/daily-review?userId=$userId&timezoneOffset=$offset',
+          '$nodeBaseUrl/analytics/daily-review?userId=$userId&timezoneOffset=$offset',
         ),
       );
 
@@ -190,13 +196,12 @@ class ApiService {
   static Future<List<dynamic>?> getHistory() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final userId = prefs.getString('userId');
 
       if (userId == null) return null;
 
       var response = await http.get(
-        Uri.parse('$baseUrl/history?userId=$userId'),
+        Uri.parse('$nodeBaseUrl/history?userId=$userId'),
       );
 
       if (response.statusCode == 200) {

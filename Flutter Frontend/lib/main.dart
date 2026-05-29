@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'screens/home/main_home.dart';
 import 'screens/home/main_home.dart';
 import 'providers/theme_provider.dart';
+import 'screens/auth/splash_screen.dart';
 import 'providers/user_provider.dart';
 import 'services/notification_scheduler.dart';
 
@@ -115,7 +116,7 @@ class MyApp extends StatelessWidget {
         );
       },
 
-      home: const MainHome(),
+      home: const SplashScreen(),
     );
   }
 }

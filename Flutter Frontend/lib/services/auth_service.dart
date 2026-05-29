@@ -5,7 +5,7 @@ import 'api_service.dart';
 
 class AuthService {
   // Base URL for backend
-  static String get baseUrl => '${ApiService.baseUrl}/auth';
+  static String get baseUrl => '${ApiService.nodeBaseUrl}/auth';
 
   // SIGN UP
   Future<Map<String, dynamic>?> signup(String email, String password, String name) async {
