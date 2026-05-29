@@ -1,89 +1,105 @@
+import json
 import os
-import base64
-import requests
+import numpy as np
+from PIL import Image
+import tensorflow.lite as tflite
 
-GENERIC_CATEGORIES = [
-    "rice dish", "spiced rice", "fried rice",
-    "fried snack", "crispy snack",
-    "beverage", "cold drink", "milk based drink",
-    "dessert", "sweet food",
-    "curry", "vegetable dish", "salad",
-    "fast food", "pasta dish", "noodles",
-    "food"
-]
+from config import (
+    VISION_MODEL,
+    CLASS_INDICES,
+    IMAGE_SIZE
+)
 
 
 class VisionService:
     def __init__(self):
-        self.hf_api_enabled = True
-        print("[VisionService] Using HuggingFace fallback-only mode")
+        self.interpreter = None
+        self.class_names = []
+        self.input_details = None
+        self.output_details = None
+        self._load()
 
-    def _call_hf_api(self, model_id: str, data: bytes, is_zero_shot: bool = False) -> list:
-        if not self.hf_api_enabled:
-            return []
-
-        api_url = f"https://router.huggingface.co/hf-inference/models/{model_id}"
-        token = os.getenv("HF_TOKEN")
-
-        headers = {"X-Wait-For-Model": "true"}
-
-        if token and token.strip() and not token.startswith("your_"):
-            headers["Authorization"] = f"Bearer {token}"
-
+    def _load(self):
         try:
-            if is_zero_shot:
-                encoded_image = base64.b64encode(data).decode("utf-8")
-                payload = {
-                    "inputs": encoded_image,
-                    "parameters": {"candidate_labels": GENERIC_CATEGORIES}
-                }
-                response = requests.post(api_url, headers=headers, json=payload, timeout=25)
-            else:
-                headers["Content-Type"] = "image/jpeg"
-                response = requests.post(api_url, headers=headers, data=data, timeout=25)
+            self.interpreter = tflite.Interpreter(
+                model_path=VISION_MODEL
+            )
 
-            if response.status_code == 200:
-                return response.json()
+            self.interpreter.allocate_tensors()
 
-            print(f"[VisionService API] HF API error ({response.status_code}): {response.text}")
-            return []
+            self.input_details = self.interpreter.get_input_details()
+            self.output_details = self.interpreter.get_output_details()
+
+            print("[VisionService] Model loaded successfully")
 
         except Exception as e:
-            print(f"[VisionService API] HF API connection failed: {e}")
-            self.hf_api_enabled = False
-            return []
-
-    def predict(self, image_path: str):
-        print("[VisionService] Using HuggingFace food classifier")
+            print(f"[VisionService] Model load failed: {e}")
+            self.interpreter = None
+            return
 
         try:
-            with open(image_path, "rb") as f:
-                image_bytes = f.read()
+            with open(CLASS_INDICES, "r") as f:
+                raw = json.load(f)
+
+            idx2class = {}
+
+            for k, v in raw.items():
+                if isinstance(k, str) and k.isdigit():
+                    idx2class[int(k)] = v
+                elif isinstance(v, int):
+                    idx2class[v] = k
+
+            self.class_names = [
+                idx2class[i]
+                for i in sorted(idx2class.keys())
+            ]
+
+            print(f"[VisionService] Loaded {len(self.class_names)} classes")
+
         except Exception as e:
-            print(f"[VisionService] Failed to read image: {e}")
+            print(f"[VisionService] Failed class loading: {e}")
+
+    def predict(self, image_path):
+
+        if self.interpreter is None:
+            print("[VisionService] Interpreter unavailable")
             return None
 
-        hf_res = self._call_hf_api("nateraw/food", image_bytes)
+        try:
+            img = Image.open(image_path)
+            img = img.convert("RGB")
+            img = img.resize(IMAGE_SIZE)
 
-        if hf_res and isinstance(hf_res, list) and len(hf_res) > 0 and "score" in hf_res[0]:
+            arr = np.array(img)
+
+            dtype = self.input_details[0]["dtype"]
+
+            if dtype == np.float32:
+                arr = arr.astype(np.float32)
+            elif dtype == np.uint8:
+                arr = arr.astype(np.uint8)
+
+            arr = np.expand_dims(arr, axis=0)
+
+            self.interpreter.set_tensor(
+                self.input_details[0]["index"],
+                arr
+            )
+
+            self.interpreter.invoke()
+
+            preds = self.interpreter.get_tensor(
+                self.output_details[0]["index"]
+            )[0]
+
+            idx = int(np.argmax(preds))
+
             return {
-                "name": hf_res[0]["label"].lower().strip(),
-                "confidence": round(float(hf_res[0]["score"]) * 100, 2),
-                "source": "food101"
+                "name": self.class_names[idx].lower(),
+                "confidence": round(float(preds[idx]) * 100, 2),
+                "source": "custom"
             }
 
-        print("[VisionService] Food classifier failed, trying CLIP general fallback")
-        clip_res = self._call_hf_api("openai/clip-vit-base-patch32", image_bytes, is_zero_shot=True)
-
-        if clip_res and isinstance(clip_res, list) and len(clip_res) > 0 and "score" in clip_res[0]:
-            return {
-                "name": clip_res[0]["label"].lower().strip(),
-                "confidence": round(float(clip_res[0]["score"]) * 100, 2),
-                "source": "general_categorization"
-            }
-
-        return {
-            "name": "unknown meal",
-            "confidence": 0.0,
-            "source": "fallback"
-        }
+        except Exception as e:
+            print(f"[VisionService] Prediction failed: {e}")
+            return None
