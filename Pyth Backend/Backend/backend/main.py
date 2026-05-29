@@ -69,7 +69,7 @@ class Phase2Request(BaseModel):
 
 # ── Endpoints ───────────────────────────────────────────────────────────────
 @app.post("/api/phase1/detect")
-async def detect_food(files: List[UploadFile] = File(...)):
+async def detect_food(files: list[UploadFile] = File(..., description="Upload one or more food images")):
     detected = []
     seen = set()
     num_files = 0
