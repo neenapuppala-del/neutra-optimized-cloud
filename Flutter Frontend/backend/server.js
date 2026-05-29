@@ -22,10 +22,10 @@ app.use(cors({
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5000",
-    "https://nutrify-frontend.onrender.com"
+    "https://nutrify-frontend-vt2z.onrender.com"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization","Access-Control-Allow-Origin"],
   credentials: true
 }));
 
