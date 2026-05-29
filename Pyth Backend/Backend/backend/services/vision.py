@@ -22,6 +22,7 @@ try:
 except Exception as e:
     print(f"[VisionService] tensorflow.lite unavailable: {e}")
     TFLITE_AVAILABLE = False
+
 GENERIC_CATEGORIES = [
     "rice dish",
     "spiced rice",
@@ -155,8 +156,20 @@ class VisionService:
 
     def predict(self, image_path: str):
         if self.interpreter is None:
-            print("[VisionService] Interpreter unavailable")
-            return None
+    print("[VisionService] Interpreter unavailable, using HuggingFace fallback directly")
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
+
+    hf_res = self._call_hf_api("nateraw/food", image_bytes)
+
+    if hf_res and isinstance(hf_res, list) and len(hf_res) > 0 and "score" in hf_res[0]:
+        return {
+            "name": hf_res[0]["label"].lower().strip(),
+            "confidence": round(float(hf_res[0]["score"]) * 100, 2),
+            "source": "food101"
+        }
+
+    return None
 
         if not self.class_names:
             print("[VisionService] Class names unavailable")
