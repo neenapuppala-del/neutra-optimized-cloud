@@ -29,7 +29,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  void _showMealDetails(BuildContext context, String title, String calories, bool isDark, String realTime) {
+  double _getNutrientVal(Map<String, dynamic>? nutrients, List<String> possibleKeys) {
+    if (nutrients == null) return 0.0;
+    for (var key in nutrients.keys) {
+      final lowerKey = key.toLowerCase();
+      if (possibleKeys.any((pk) => lowerKey.contains(pk))) {
+        final val = nutrients[key];
+        if (val == null) continue;
+        if (val is num) return val.toDouble();
+        final parsed = double.tryParse(val.toString().replaceAll(RegExp(r'[^0-9.]'), ''));
+        if (parsed != null) return parsed;
+      }
+    }
+    return 0.0;
+  }
+
+  void _showMealDetails(BuildContext context, String title, String calories, bool isDark, String realTime, Map<String, dynamic>? nutrients) {
+    final protein = _getNutrientVal(nutrients, ["protein", "prot"]);
+    final carbs = _getNutrientVal(nutrients, ["carbohydrate", "carb"]);
+    final fats = _getNutrientVal(nutrients, ["fat"]);
+
+    final total = protein + carbs + fats;
+    final proteinPercentage = total > 0 ? protein / total : 0.0;
+    final carbsPercentage = total > 0 ? carbs / total : 0.0;
+    final fatsPercentage = total > 0 ? fats / total : 0.0;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -76,9 +100,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               const Divider(height: 30),
               const Text("Macro Breakdown", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              _buildMacroBar("Protein", 0.4, Colors.purple.shade300, "30g", isDark),
-              _buildMacroBar("Carbs", 0.7, Colors.orange.shade400, "55g", isDark),
-              _buildMacroBar("Fats", 0.2, const Color(0xFF7CB342), "15g", isDark),
+              _buildMacroBar("Protein", proteinPercentage, Colors.purple.shade300, "${protein.round()}g", isDark),
+              _buildMacroBar("Carbs", carbsPercentage, Colors.orange.shade400, "${carbs.round()}g", isDark),
+              _buildMacroBar("Fats", fatsPercentage, const Color(0xFF7CB342), "${fats.round()}g", isDark),
               const SizedBox(height: 30),
               GestureDetector(
                 onTap: () => Navigator.pop(ctx),
@@ -202,6 +226,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             const Color(0xFF7CB342),
             isDark,
             isLast: isLast,
+            meal: meal,
           );
         }).toList()),
       );
@@ -241,7 +266,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildTimelineItem(BuildContext context, String time, String title, String calories, IconData icon, Color iconColor, bool isDark, {bool isLast = false}) {
+  Widget _buildTimelineItem(BuildContext context, String time, String title, String calories, IconData icon, Color iconColor, bool isDark, {bool isLast = false, required dynamic meal}) {
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -284,7 +309,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 24),
               child: GestureDetector(
-                onTap: () => _showMealDetails(context, title, calories, isDark, time),
+                onTap: () => _showMealDetails(context, title, calories, isDark, time, meal['nutrients'] as Map<String, dynamic>?),
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(

@@ -68,6 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   List<dynamic> _suggestions = [];
   String _userName = "Healthy User";
+  bool _isCompleting = false;
 
   @override
   void initState() {
@@ -358,19 +359,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _viewRecommendations() => setState(() => _step = 4);
 
   void _completeFlow() async {
+    if (_isCompleting) return;
+    setState(() {
+      _isCompleting = true;
+    });
+
     final dishName = _dishes.isNotEmpty ? _dishes.map((d) => d.name).join(", ") : "Meal";
     
-    // Log meal to backend
-    await ApiService.logMeal(dishName, _calculatedHealthScore, _finalNutrients);
+    try {
+      // Log meal to backend
+      await ApiService.logMeal(dishName, _calculatedHealthScore, _finalNutrients);
 
-    // Refresh stats
-    await _loadDailyStats();
-
-    setState(() {
-      _step = 0;
-      _selectedImages.clear();
-      _dishes = [];
-    });
+      // Refresh stats
+      await _loadDailyStats();
+    } catch (e) {
+      debugPrint("Error completing flow: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCompleting = false;
+          _step = 0;
+          _selectedImages.clear();
+          _dishes = [];
+        });
+      }
+    }
   }
 
   Color _getScoreColor(int score) {
@@ -1521,16 +1534,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }),
         const SizedBox(height: 20),
         ElevatedButton(
-          onPressed: _completeFlow,
+          onPressed: _isCompleting ? null : _completeFlow,
           style: ElevatedButton.styleFrom(
             backgroundColor: lightGreen,
             minimumSize: const Size(double.infinity, 55),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          child: const Text(
-            "Complete",
-            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+          child: _isCompleting
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : const Text(
+                  "Complete",
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
         ),
       ],
     );
