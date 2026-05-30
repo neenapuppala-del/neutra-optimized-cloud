@@ -12,7 +12,7 @@ const storage = multer.memoryStorage();
 
 const upload = multer({ storage: storage });
 
-const PYTHON_API = "http://127.0.0.1:8000/api";
+const PYTHON_API = process.env.PYTHON_API_URL || "https://neutra-optimized-cloud.onrender.com/api";
 
 // Proxy scan to Python phase1
 router.post("/scan", upload.array("files"), async (req, res) => {
