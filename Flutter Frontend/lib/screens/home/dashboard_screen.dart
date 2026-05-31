@@ -1,6 +1,7 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/api_service.dart';
@@ -74,6 +75,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadDailyStats();
+  }
+
+  Future<void> _downloadAndroidApp() async {
+    final Uri url = Uri.parse('/downloads/nutrify-android.apk');
+
+    if (!await launchUrl(
+      url,
+      mode: LaunchMode.externalApplication,
+      webOnlyWindowName: '_blank',
+    )) {
+      debugPrint('Could not open Android APK download link');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not start Android app download.')),
+        );
+      }
+    }
   }
 
   Future<void> _loadDailyStats() async {
@@ -528,6 +546,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _buildDailyAverageScore(isDark, textColor, lightGreen),
             const SizedBox(height: 16),
             _buildDailyIntakeCard(isDark, textColor, lightGreen),
+            if (kIsWeb) ...[
+              const SizedBox(height: 16),
+              _buildAndroidDownloadCard(isDark, textColor, lightGreen),
+            ],
             const SizedBox(height: 24),
             ..._completedMeals.map((meal) => _buildMealScoreCard(meal, isDark, textColor)),
             const SizedBox(height: 10),
@@ -594,6 +616,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+      isDark,
+    );
+  }
+
+  Widget _buildAndroidDownloadCard(bool isDark, Color textColor, Color lightGreen) {
+    return _buildCard(
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.android_rounded, color: lightGreen, size: 24),
+              const SizedBox(width: 10),
+              Text(
+                "Get the Android App",
+                style: TextStyle(
+                  color: textColor,
+                  fontFamily: "Cormorant",
+                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Install Nutrify on your Android phone for a smoother app experience.",
+            style: TextStyle(
+              color: isDark ? Colors.grey.shade400 : const Color(0xFF5A6E5C),
+              fontSize: 14,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          ElevatedButton.icon(
+            onPressed: _downloadAndroidApp,
+            icon: const Icon(Icons.download_rounded, color: Colors.white),
+            label: const Text(
+              "Download Android APK",
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: lightGreen,
+              minimumSize: const Size(double.infinity, 50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Note: Android may ask you to allow installs from your browser or file manager.",
+            style: TextStyle(
+              color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+              fontSize: 12,
             ),
           ),
         ],
